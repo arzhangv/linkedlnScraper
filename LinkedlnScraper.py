@@ -9,8 +9,8 @@ import re as re
 import time
 import pandas as pd
 class LinkedlnScraper:
-    email = "aditi.kotha03@gmail.com"
-    password = "Arzhang19"
+    email = ""
+    password = ""
     job_titles = ["entry level soaftwre engineer", "jr software engineer", "new grad software engineer"]
     locations = ["Unitied States"]
 
