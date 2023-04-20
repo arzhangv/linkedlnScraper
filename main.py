@@ -11,8 +11,7 @@ if __name__ == '__main__':
     email = "aditi.kotha03@gmail.com"
     password = "Arzhang19"
     #Arzhang's login
-    '''email = "avaladkhani14@gmail.com"
-    password = "Ukrzi7az$"'''
+   
     "https://www.linkedin.com/checkpoint/challenge/AgE3kLbSJ8mj2AAAAYddM0ygrt7E_PxaaUs8N4kBi9NVnk7uKGD0lL1L6toPuXNSJmjWpc9X2OWTbVyssKYjhm7UfilfZw?ut=2P9oUXN4BiuqI1"
     job_titles = ["entry level soaftware engineer", "jr software engineer", "new grad software engineer"]
     locations = ["newport beach", "Los Angles"]
