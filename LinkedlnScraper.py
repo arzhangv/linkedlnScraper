@@ -108,6 +108,7 @@ class LinkedlnScraper:
 
 
 
+
                 if self.check_exists_by_xpath(driver,'''//*[@id="ember31"]/span''') == True:
                     driver.find_element(By.XPATH, '''//*[@id="ember31"]/span''').click()
                     #driver.
