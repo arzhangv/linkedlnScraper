@@ -19,6 +19,8 @@ import csv
 from csv import writer,reader
 class LinkedlnScraper:
 
+
+
     email = ""
     password = ""
     job_titles = []
@@ -190,6 +192,7 @@ class LinkedlnScraper:
         self.set_email()
         self.set_password()
         driver = webdriver.Chrome(PATH)
+
         time.sleep(2)
         driver.get("https://www.linkedin.com/")
         time.sleep(2)
@@ -268,4 +271,13 @@ class LinkedlnScraper:
 
 
 
+
+
+        driver.get("https://www.linkedin.com/uas/login")
+        time.sleep(3)
+        email = driver.find_element_by_id("username")
+        email.send_keys(email)
+        password = driver.find_element_by_id("password")
+        password.send_keys(password)
+        time.sleep(5)
 
