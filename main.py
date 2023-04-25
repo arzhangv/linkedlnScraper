@@ -8,9 +8,12 @@ from LinkedlnScraper import LinkedlnScraper
 if __name__ == '__main__':
 
     #Aditi's login
+
     email = 0
     password = 0
 
+
+ 
     #, "jr software engineer", "new grad software engineer"
     job_titles = ["entry level software engineer", "jr software engineer", "new grad software engineer"]
     #, "Los Angles"
