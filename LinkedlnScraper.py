@@ -1,14 +1,16 @@
 import selenium
 from selenium import webdriver
-from selenium.common import TimeoutException, NoSuchElementException
+from selenium.common import TimeoutException, NoSuchElementException, ElementNotInteractableException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import mysql.connector
+from datetime import date
+import random
 import pymysql
 from selenium import webdriver
-from bs4 import BeautifulSoup as bs
+from bs4 import BeautifulSoup
 import re as re
 import time
 import pandas as pd
@@ -69,80 +71,206 @@ class LinkedlnScraper:
 
     def check_exists_by_xpath(self, driver,xpath):
         try:
-            driver.find_element_by_xpath(xpath)
+            driver.find_element(By.XPATH,xpath)
         except NoSuchElementException:
             return False
         return True
-
-    def extract_data_from_job_url(self):
-        #reading from csv and then cleaning up dataframe
+    def soup_data(self):
         driver = self.loginToLinkdln()
         driver.maximize_window()
         self.df = pd.read_csv("jobs_urls.csv")
         self.df.dropna()
         self.df.drop_duplicates()
+        data = {
+            "job_title": [],
+            "job_description": [],
+            "company": [],
+            "location": [],
+            "job_id": [],
+            "url": [],
+            "workplace_type": [],
+            "date": []
 
+        }
+        today = date.today()
         for job in list(self.df["urls"]):
+            driver.get(url)
+            url = job
+            rand_time = random.randint(2,8)
+            time.sleep(rand_time)
+
+
+            html_source = driver.page_source
+            soup = BeautifulSoup(html_source,"html.parser")
+
+            job_title = soup.find('h1', class_='t-24 t-bold jobs-unified-top-card__job-title').text
+
+            body = soup.find('div',class_="jobs-box__html-content jobs-description-content__text t-14 t-normal jobs-description-content__text--stretch").text
+
+            company = soup.find('a',class_="ember-view t-black t-normal").text
+
+            location = soup.find('span',class_="jobs-unified-top-card__bullet").text
+
+            workplace_type = soup.find('span', class_="jobs-unified-top-card__workplace-type").text
+
+            words = url.split('/')
+            job_id = words[5]
+
+            data['job_title'].append(job_title)
+            data['job_description'].append(body)
+            data['company'].append(company)
+            data['location'].append(location)
+            data['workplace_type'].append(workplace_type)
+            data['job_id'].append(job_id)
+            data["date"].append(today)
+        self.df.from_dict(data)
+        self.df.to_csv("job_data.csv")
+
+
+
+    def extract_data_from_job_url(self):
+            #reading from csv and then cleaning up dataframe
+            driver = self.loginToLinkdln()
+            driver.maximize_window()
+            self.df = pd.read_csv("jobs_urls.csv")
+            self.df.dropna()
+            self.df.drop_duplicates()
             data = {
-                "job title": [],
-                "job description":[],
+                "job_title": [],
+                "job_description": [],
                 "company": [],
-                "location":[],
-                "job id": [],
+                "location": [],
+                "job_id": [],
                 "url": [],
-                "workplace type": []
+                "workplace_type": [],
+                "date": []
+
             }
 
+            for job in list(self.df["urls"]):
 
-            try:
-                driver.get(job)
+                try:
+                    driver.get(job)
+                    time
+                    time.sleep(3)
+                except NoSuchElementException:
+                    print("URL is not accessible")
+                    continue
 
-                time.sleep(3)
+                html_content = driver.page_source
+                BeautifulSoup(html_content,"html.parser")
+
+
+
 
                 if self.check_exists_by_xpath(driver, '''//*[@id="ember32"]/span''') == True:
-                    driver.find_element(By.XPATH, '''//*[@id="ember32"]/span''').click()
-                    company = driver.find_element(By.XPATH, "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div[1]/span[1]/span[1]").text
+                    # Click on the show more to see the rest of the job posting
+
+                    try:
+                        button = driver.find_element(By.ID, '''ember31''')
+                        button.click()
+                    except ElementNotInteractableException:
+                        print("button cannot be clicked!")
+                        continue
+                    soup = bs(driver.current_url)
+
+                    #Getting the name of the comapny
+                    try:
+                        company = driver.find_element(By.XPATH, "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div[1]/span[1]/span[1]").text
+                    except NoSuchElementException:
+                        print("company is not found")
+                        company = "na"
+
+                    # <span class="jobs-unified-top-card__subtitle-primary-grouping t-black">
+                    #             <span class="jobs-unified-top-card__company-name">
+                    #                   <a href="/company/vastspace/life/" id="ember149" class="ember-view t-black t-normal">
+                    #                     VAST
+                    #                   </a>
+                    #             </span>
+                    #               <span class="jobs-unified-top-card__bullet">
+                    #                 Long Beach, CA
+                    #               </span>
+                    #
+                    #               <span class="jobs-unified-top-card__workplace-type">On-site</span>
+                    #           </span>
+
+
+                    #Getting the location of the job from XPATH
                     location = driver.find_element(By.XPATH,  "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div[1]/span[1]/span[2]").text
                     #https://www.linkedin.com/jobs/view/3566940281/?refId=Ipv0A5ER2%2FrQAjn4J%2BknWQ%3D%3D&trackingId=We9%2FuzItSMmT2vfAY%2BKslg%3D%3D&trk=flagship3_search_srp_jobs
+
+                    #URL for the posting can be simply exracted from the list of job urls were iterating from
                     url = job
+
+                    #Job id can be taken from the url
                     words = url.split('/')
-                    job_id =  words[5]
+                    job_id = words[5]
+
+                    #Getting the name of the position from XPATH
+                    job_title = driver.find_element(By.XPATH, '/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/h1').text
+
+                    #Getting the job description from the XPATH
+                    time.sleep(3)
+                    #/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[2]/article/div/div[1]/span
+                    try:
+
+                        job_description = driver.find_element(By.XPATH, "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[2]/article/div/div[1]/span").text
+                    except NoSuchElementException:
+                        job_description = "na"
 
 
 
+                elif self.check_exists_by_xpath(driver,'''//*[@id="ember31"]/span''') == True:
 
-                if self.check_exists_by_xpath(driver,'''//*[@id="ember31"]/span''') == True:
-                    driver.find_element(By.XPATH, '''//*[@id="ember31"]/span''').click()
-                    #driver.
+                    button = driver.find_element(By.ID, '''ember31''')
+                    button.click()
+
+                    # Getting the name of the comapny
+                    company = driver.find_element(By.XPATH,"/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div[1]/span[1]/span[1]").text
+                    # Getting the location of the job from XPATH
+                    location = driver.find_element(By.XPATH,
+                                                   "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div[1]/span[1]/span[2]").text
+                    # https://www.linkedin.com/jobs/view/3566940281/?refId=Ipv0A5ER2%2FrQAjn4J%2BknWQ%3D%3D&trackingId=We9%2FuzItSMmT2vfAY%2BKslg%3D%3D&trk=flagship3_search_srp_jobs
+
+                    # URL for the posting can be simply exracted from the list of job urls were iterating from
+                    url = job
+
+                    # Job id can be taken from the url
+                    words = url.split('/')
+                    job_id = words[5]
+
+                    # Getting the name of the position from XPATH
+                    job_title = driver.find_element(By.XPATH,'/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/h1').text
+
+                    # Getting the job description from the XPATH
+                    time.sleep(3)
+                    job_description = driver.find_element(By.XPATH,"/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[4]/article/div/div[1]/span").text
 
 
+                elif self.check_exists_by_xpath(driver, '''//*[@id="ember30"]/span''') == True:
+                    button = driver.find_element(By.ID, '''ember31''')
+                    button.click()
+                    # Getting the name of the company
+                    company = driver.find_element(By.XPATH,
+                                                  "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div[1]/span[1]/span[1]").text
+                    # Getting the location of the job from XPATH
+                    location = driver.find_element(By.XPATH,
+                                                   "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/div[1]/span[1]/span[2]").text
+                    # https://www.linkedin.com/jobs/view/3566940281/?refId=Ipv0A5ER2%2FrQAjn4J%2BknWQ%3D%3D&trackingId=We9%2FuzItSMmT2vfAY%2BKslg%3D%3D&trk=flagship3_search_srp_jobs
 
+                    # URL for the posting can be simply exracted from the list of job urls were iterating from
+                    url = job
 
-                elif self.check_exists_by_xpath(driver,'''//*[@id="ember30"]''')  == True:
-                    driver.find_element(By.XPATH, '''//*[@id="ember30"]/span''').click()
+                    # Job id can be taken from the url
+                    words = url.split('/')
+                    job_id = words[5]
 
+                    # Getting the name of the position from XPATH
+                    time.sleep(3)
+                    job_title = driver.find_element(By.XPATH,'/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[1]/div/div/div[1]/h1').text
 
-
-
-                "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[2]/footer/button/span"
-                "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[2]/footer/button"
-
-                "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[2]/footer/button"
-                "/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[4]/footer/button"
-                '''// *[ @ id = "ember30"]'''
-                '''//*[@id="ember32"]/span'''
-                '''//*[@id="ember31"]'''
-                '''/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[2]/footer/button/span'''
-                '''//*[@id="ember31"]/span'''
-                '''//*[@id="ember32"]/span'''
-                '''//*[@id="ember31"]/span'''
-                '''//*[@id="ember31"]/span'''
-
-                '''//*[@id="ember30"]'''
-                '''//*[@id="ember31"]'''
-
-            except NoSuchElementException:
-                print("URL doesn't exist")
+                    # Getting the job description from the XPATH
+                    job_description = driver.find_element(By.XPATH,"/html/body/div[5]/div[3]/div/div[1]/div[1]/div/div[4]/article/div/div[1]/span").text
 
 
 
@@ -235,7 +363,7 @@ class LinkedlnScraper:
         '''
 
         for job, location in zip( self.job_titles, self.locations):
-            while index < 50:
+            while index < 975:
                 current_url = self.create_url_query_for_24hrs(job=job, location=location, page=index)
                 try:
                     driver.get(current_url)
@@ -273,11 +401,5 @@ class LinkedlnScraper:
 
 
 
-        driver.get("https://www.linkedin.com/uas/login")
-        time.sleep(3)
-        email = driver.find_element_by_id("username")
-        email.send_keys(email)
-        password = driver.find_element_by_id("password")
-        password.send_keys(password)
-        time.sleep(5)
+
 
