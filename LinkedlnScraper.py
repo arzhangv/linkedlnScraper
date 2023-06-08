@@ -36,8 +36,7 @@ class LinkedlnScraper:
 
     def connecting_to_mysqlDatabase(self, job_urls):
         #connect to Database
-        db = pymysql.connect(host="linkedlnurls.cbnylc0eza1l.us-east-1.rds.amazonaws.com", user="arzhangv",
-                             password="Ukrzi7az$")
+        db = pymysql.connect(host=")
         cursor = db.cursor()
         cursor.execute("select  version()")
         data = cursor.fetchone()
